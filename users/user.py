@@ -4,11 +4,12 @@ from typing import Any
 class User():
     #class for user on platform
     
-    def __init__(self, name: str, hashed_id: str, private_key: str):
+    def __init__(self, name: str, hashed_id: str, private_key: str, email: str = None):
         #Init user instance
         self.name = name
         self.hashed_id = hashed_id
         self.private_key = private_key
+        self.email = email
     
     def __eq__(self, other: Any):
         #hashed_id verification
