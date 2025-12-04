@@ -1,9 +1,8 @@
-from abc import ABC
 from typing import Any
 
 
-class User(ABC):
-    #Base class for user on platform
+class User():
+    #class for user on platform
     
     def __init__(self, name: str, hashed_id: str, private_key: str):
         #Init user instance
