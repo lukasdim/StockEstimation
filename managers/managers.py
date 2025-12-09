@@ -1,6 +1,8 @@
 import warnings
+
 import yfinance as yf
 from pandas import DataFrame
+import pandas as pd
 
 
 # Docs for return values:
@@ -11,11 +13,26 @@ class DataManager:
         self.data = None
         self.tickers = []
 
+        index = pd.MultiIndex(
+            levels=[[], []],
+            codes=[[], []],
+            names=["Date", "Ticker"]
+        )
+
+        self.short_predictions = DataFrame(index=index, columns=['predicted_price'])
+
+    def update_preds(self, ticker, data: pd.Series):
+        df_temp = pd.DataFrame(data, index=data.index)
+        df_temp["Ticker"] = ticker
+        df_temp = df_temp.set_index("Ticker", append=True)
+        self.short_predictions = pd.concat([self.short_predictions, df_temp])
+
     def update_data(self):
         if len(self.tickers) == 0:
             warnings.warn("No tickers are being tracked. Add a ticker using fetch_new_ticker()")
         else:
-            self.data = yf.Tickers(tickers=self.tickers).download() # might want to increase more than 1m
+            self.data = yf.Tickers(tickers=self.tickers)
+            self.data = self.data.download(period="1y", interval="1d") # might want to increase more than 1m
 
     def fetch_new_ticker(self, ticker: str, auto_update=True):
         ticker = ticker.upper()
@@ -38,6 +55,23 @@ class DataManager:
 
         return None # if auto_update is false
 
-    # return data for only specific ticker
+    # return data for only specific ticker, as well as add extra information
     def get_ticker_data(self, ticker: str) -> DataFrame:
-        return self.data.xs(ticker.upper(), axis=1, level=1)
+        new_data = yf.Ticker(ticker).get_earnings_history()
+        main_data = self.data.xs(ticker.upper(), axis=1, level=1)
+        main_data = main_data.sort_index()
+        new_data = new_data.sort_index().reset_index().rename(columns={'index': 'quarter'})
+
+        # merge_asof: match each date with the most recent quarter date
+        merged = pd.merge_asof(
+            main_data.reset_index().rename(columns={'index': 'Date'}),
+            new_data,
+            left_on='Date',
+            right_on='quarter',
+            direction='backward'  # important: use the last known quarter
+        )
+
+        # Set index back
+        merged = merged.set_index('Date')
+
+        return merged.dropna()
