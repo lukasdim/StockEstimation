@@ -23,7 +23,7 @@ class UserManager:
         
         user = self.users[name]
 
-        # Update allowed attributes explicitly
+        # Update allowed attributes
         if email is not None:
             user.email = email
         if hashed_id is not None:
@@ -31,7 +31,7 @@ class UserManager:
         if private_key is not None:
             user.private_key = private_key
 
-    def verify_user(self, name: str, hashed_id: str) -> bool:
+    def verify_user(self, name: str, hashed_id: str):
         if name not in self.users:
             return False
         return self.users[name].hashed_id == hashed_id
