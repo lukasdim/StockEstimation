@@ -9,7 +9,7 @@ class UserManager:
 
     def add_user(self, user: User):
         if user.name in self.users:
-            raise Exception("User with name " + user.name + (" already exists")
+            raise Exception("User with name " + user.name + " already exists")
         self.users[user.name] = user
 
     def delete_user(self, name: str):
@@ -29,9 +29,15 @@ class UserManager:
         if hashed_id is not None:
             user.hashed_id = hashed_id
         if private_key is not None:
-            user.private_key = private_key
+            user.private_key = user._hash_private_key(private_key)
 
     def verify_user(self, name: str, hashed_id: str):
         if name not in self.users:
             return False
         return self.users[name].hashed_id == hashed_id
+    
+    def verify_private_key(self, name: str, private_key: str):
+        #Verify key with encrypted key
+        if name not in self.users:
+            return False
+        return self.users[name].verify_private_key(private_key)

@@ -1,4 +1,5 @@
 from typing import Any
+import bcrypt
 
 
 class User():
@@ -8,8 +9,23 @@ class User():
         #Init user instance
         self.name = name
         self.hashed_id = hashed_id
-        self.private_key = private_key
+        self.private_key = self._hash_private_key(private_key)
         self.email = email
+    
+    def _hash_private_key(self, private_key: str):
+        if isinstance(private_key, str) and private_key.startswith('$2b$'):
+            return private_key
+            
+        # Hash the private key
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(private_key.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
+    
+    def verify_private_key(self, private_key: str):
+        try:
+            return bcrypt.checkpw(private_key.encode('utf-8'), self.private_key.encode('utf-8'))
+        except Exception:
+            return False
     
     def __eq__(self, other: Any):
         #hashed_id verification
