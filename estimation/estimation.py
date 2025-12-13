@@ -271,5 +271,6 @@ class LongEstimation(Estimation):
 
         # 6. Merge predictions back with original data
         merged = df.merge(predictions, on="ds", how="right")
+        merged.set_index("ds", inplace=True)
 
         return merged
