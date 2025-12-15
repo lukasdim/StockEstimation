@@ -1,8 +1,12 @@
 import warnings
+from datetime import datetime
 
 import yfinance as yf
 from pandas import DataFrame
 import pandas as pd
+
+from estimation.estimation import ShortEstimation, LongEstimation
+from users.user_manager import UserManager
 
 
 # Docs for return values:
@@ -12,14 +16,17 @@ class DataManager:
     def __init__(self):
         self.data = None
         self.tickers = []
-
+        self.short_predictions = self._create_empty_predictions_df()
+    
+    @staticmethod
+    def _create_empty_predictions_df():
+        """Create an empty predictions DataFrame with MultiIndex."""
         index = pd.MultiIndex(
             levels=[[], []],
             codes=[[], []],
             names=["Date", "Ticker"]
         )
-
-        self.short_predictions = DataFrame(index=index, columns=['predicted_price'])
+        return DataFrame(index=index, columns=['predicted_price'])
 
     def update_preds(self, ticker, data: pd.Series):
         df_temp = pd.DataFrame(data, index=data.index)
@@ -75,3 +82,38 @@ class DataManager:
         merged = merged.set_index('Date')
 
         return merged.dropna()
+
+
+class Manager:
+    
+    def __init__(self):
+        # UML diagram componentd
+        self.data: DataManager = DataManager()
+        self.short_est: ShortEstimation = ShortEstimation()
+        self.long_est: LongEstimation = LongEstimation()
+        self.user_manager: UserManager = UserManager()
+        
+        # DateTime
+        self.current_date: datetime = datetime.now()
+        self.last_estimation: datetime = None
+    
+    def update_estimations(self, reset=False):
+        if reset:
+            # Clears previous predictions
+            self.data.short_predictions = self.data._create_empty_predictions_df()
+        
+        # Updates data for every ticker
+        self.data.update_data()
+        
+        # Run estimations for each ticker
+        for ticker in self.data.tickers:
+            ticker_data = self.data.get_ticker_data(ticker)
+            
+            # Short-term estimation
+            pred_price, real_price = self.short_est.estimate(ticker_data)
+            self.data.update_preds(ticker, pred_price)
+        
+        # Update last estimation
+        self.last_estimation = datetime.now()
+        
+        return self.data.short_predictions
