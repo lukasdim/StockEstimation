@@ -11,7 +11,7 @@ class User():
         self.private_key = self.hash_private_key(password)
         self.email = email
 
-        self.balance = 10000 # fake starting balance of 10k
+        self.balance = float(10000) # fake starting balance of 10k
         self.positions = {}
     
     def hash_private_key(self, password: str):
