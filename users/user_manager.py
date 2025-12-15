@@ -1,6 +1,7 @@
 from typing import Dict
 from users.user import User
 import bcrypt
+import warnings
 
 class UserManager:
     
@@ -9,17 +10,17 @@ class UserManager:
 
     def add_user(self, user: User):
         if user.name in self.users:
-            raise Exception("User with name " + user.name + " already exists")
+            warnings.warn("User with name " + user.name + " already exists")
         self.users[user.name] = user
 
     def delete_user(self, name: str):
         if name not in self.users:
-            raise Exception("User with name " + name + "not found")
+           warnings.warn("User with name " + name + "not found")
         del self.users[name]
 
     def update_user(self, name: str, email: str = None, password: str = None):
         if name not in self.users:
-            raise Exception("User with name " + name + "not found")
+            warnings.warn("User with name " + name + "not found")
         
         user = self.users[name]
 
