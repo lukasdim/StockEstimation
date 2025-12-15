@@ -16,23 +16,23 @@ class DataManager:
     def __init__(self):
         self.data = None
         self.tickers = []
-        self.short_predictions = self._create_empty_predictions_df()
+        self.predictions = self.create_empty_predictions_df()
     
     @staticmethod
-    def _create_empty_predictions_df():
+    def create_empty_predictions_df():
         """Create an empty predictions DataFrame with MultiIndex."""
         index = pd.MultiIndex(
             levels=[[], []],
             codes=[[], []],
             names=["Date", "Ticker"]
         )
-        return DataFrame(index=index, columns=['predicted_price'])
+        return DataFrame(index=index, columns=['predicted_price', 'yhat', 'yhat_lower', 'yhat_upper'])
 
     def update_preds(self, ticker, data: pd.Series):
         df_temp = pd.DataFrame(data, index=data.index)
         df_temp["Ticker"] = ticker
         df_temp = df_temp.set_index("Ticker", append=True)
-        self.short_predictions = pd.concat([self.short_predictions, df_temp])
+        self.prediction = pd.concat([self.predictions, df_temp])
 
     def update_data(self):
         if len(self.tickers) == 0:
@@ -100,7 +100,7 @@ class Manager:
     def update_estimations(self, reset=False):
         if reset:
             # Clears previous predictions
-            self.data.short_predictions = self.data._create_empty_predictions_df()
+            self.data.predictions = self.data.create_empty_predictions_df()
         
         # Updates data for every ticker
         self.data.update_data()
@@ -116,4 +116,4 @@ class Manager:
         # Update last estimation
         self.last_estimation = datetime.now()
         
-        return self.data.short_predictions
+        return self.data.predictions

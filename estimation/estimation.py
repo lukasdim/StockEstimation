@@ -261,7 +261,7 @@ class LongEstimation(Estimation):
         model.fit(df)
 
         # 3. Create future dataframe for forecasting
-        future = model.make_future_dataframe(periods=self.horizon)
+        future = model.make_future_dataframe(periods=self.horizon, include_history=False)
 
         # 4. Predict
         forecast = model.predict(future)
