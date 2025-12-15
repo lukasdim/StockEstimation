@@ -16,19 +16,18 @@ class Link:
 
     # updates basic information for specific user
     def update_user(self, name: str, password: str, email: str = None, new_password: str = None):
-        user = self.manager.user_manager.get_user(name)  # needed for hash_private_key method
-        if self.manager.user_manager.verify_private_key(name, user.hash_private_key(password)):
+        if self.manager.user_manager.verify_private_key(name, password):
             self.manager.user_manager.update_user(name, email, new_password)
 
     # deletes specific user
     def delete_user(self, name, password):
-        user = self.manager.user_manager.get_user(name) #needed for hash_private_key method
-        if self.manager.user_manager.verify_private_key(name, user.hash_private_key(password)):
-            self.manager.user_manager.delete_user()
+        if self.manager.user_manager.verify_private_key(name, password):
+            self.manager.user_manager.delete_user(name)
 
-    def get_balance(self, name):
-        user = self.manager.user_manager.get_user(name)
-        return user.balance
+    def get_balance(self, name, password):
+        if self.manager.user_manager.verify_private_key(name, password):
+            user = self.manager.user_manager.get_user(name)
+            return user.balance
 
         # no access or user doesn't exist
         return None
@@ -40,3 +39,12 @@ class Link:
     # adds ticker to watchlist for estimations
     def add_ticker(self, ticker: str):
         self.manager.data.fetch_new_ticker(ticker, auto_update=False)
+
+    def buy_order(self, name, password, ticker, num_shares: float):
+        if self.manager.user_manager.verify_private_key(name, password):
+            price = self.manager.data.data.iloc[-1][("Close", ticker)]
+
+            new_data = self.manager.user_manager.buy_order(name, ticker, num_shares, price)
+            return new_data
+
+        return None # User not verified or doesn't exist

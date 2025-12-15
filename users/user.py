@@ -12,7 +12,7 @@ class User():
         self.email = email
 
         self.balance = 10000 # fake starting balance of 10k
-        self.positions = []
+        self.positions = {}
     
     def hash_private_key(self, password: str):
         if isinstance(password, str) and password.startswith('$2b$'):

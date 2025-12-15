@@ -9,10 +9,12 @@ import pandas
 manager = Manager()
 link = Link(manager)
 link.add_user(name='lukasdim', password='bobisbob', email='bobbob@bob.bob')
-print(link.get_balance('lukasdim'))
+print(link.get_balance('lukasdim', 'bobisbob'))
 link.add_ticker('AAPL')
 link.update_estimations()
-print(link.get_estimation())
+print(link.buy_order('lukasdim', 'bobisbob', 'AAPL', 3))
+print(link.buy_order('lukasdim', 'bobisbob', 'AAPL', 0.63))
+print(link.get_balance('lukasdim', 'bobisbob'))
 
 """
 #old testing with individual components
