@@ -5,11 +5,10 @@ import bcrypt
 class User():
     #class for user on platform
     
-    def __init__(self, name: str, hashed_id: str, private_key: str, email: str = None):
+    def __init__(self, name: str, password: str, email: str = None):
         #Init user instance
         self.name = name
-        self.hashed_id = hashed_id
-        self.private_key = self._hash_private_key(private_key)
+        self.private_key = self._hash_private_key(password)
         self.email = email
     
     def _hash_private_key(self, private_key: str):

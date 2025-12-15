@@ -1,13 +1,16 @@
+from users.user import User
+
 class Link:
 
     def __init__(self, manager_object):
         self.manager = manager_object
 
     def get_estimation(self):
-        return self.manager.
+        return self.manager.data.predictions
 
     def add_user(self):
-        pass
+        new_user = User()
+        self.manager.user_manager.add_user(self)
 
     def update_user(self):
         pass
