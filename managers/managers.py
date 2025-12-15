@@ -112,6 +112,9 @@ class Manager:
             # Short-term estimation
             pred_price, real_price = self.short_est.estimate(ticker_data)
             self.data.update_preds(ticker, pred_price)
+            # Long-term estimation
+            long_pred = self.long_est.estimate(ticker_data)
+            self.data.update_preds(ticker, long_pred)
         
         # Update last estimation
         self.last_estimation = datetime.now()
