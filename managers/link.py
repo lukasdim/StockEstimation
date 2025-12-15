@@ -1,4 +1,5 @@
 from users.user import User
+from users.owner import Owner
 
 class Link:
 
@@ -8,6 +9,12 @@ class Link:
     # grab all estimations (for all tickers)
     def get_estimation(self):
         return self.manager.data.predictions
+
+    def view_clients(self, name, password):
+        if self.manager.user_manager.verify_private_key(name, password):
+            owner = self.manager.user_manager.get_user(name)
+            if type(owner) is Owner:
+                self.manager.user.view_clients()
 
     # adds user (no authentication needed)
     def add_user(self, name: str, password: str, email: str = None):
@@ -25,7 +32,7 @@ class Link:
             self.manager.user_manager.delete_user(name)
 
     def get_balance(self, name, password):
-        if self.manager.user_manager.verify_private_key(name, password):
+        if self.manager.user_manager.verify_private_key(name, password, True):
             user = self.manager.user_manager.get_user(name)
             return user.balance
 
@@ -33,7 +40,7 @@ class Link:
         return None
 
     def get_positions(self, name, password):
-        if self.manager.user_manager.verify_private_key(name, password):
+        if self.manager.user_manager.verify_private_key(name, password, True):
             user = self.manager.user_manager.get_user(name)
             return user.positions
 
@@ -49,7 +56,7 @@ class Link:
         self.manager.data.fetch_new_ticker(ticker, auto_update=False)
 
     def buy_order(self, name, password, ticker, num_shares: float):
-        if self.manager.user_manager.verify_private_key(name, password):
+        if self.manager.user_manager.verify_private_key(name, password, True):
             price = self.manager.data.data.iloc[-1][("Close", ticker)]
 
             new_data = self.manager.user_manager.buy_order(name, ticker, num_shares, price)
@@ -58,7 +65,7 @@ class Link:
         return None # User not verified or doesn't exist
 
     def sell_order(self, name, password, ticker, num_shares: float):
-        if self.manager.user_manager.verify_private_key(name, password):
+        if self.manager.user_manager.verify_private_key(name, password, True):
             price = self.manager.data.data.iloc[-1][("Close", ticker)]
 
             new_data = self.manager.user_manager.sell_order(name, ticker, num_shares, price)

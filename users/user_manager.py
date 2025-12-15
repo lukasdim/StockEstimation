@@ -1,5 +1,6 @@
 from typing import Dict
 from users.user import User
+from users.owner import Owner
 from datetime import datetime
 import bcrypt
 import warnings
@@ -8,6 +9,9 @@ class UserManager:
     
     def __init__(self):
         self.users: Dict[str, User] = {}
+
+    def view_clients(self):
+        return self.users
 
     def add_user(self, user: User):
         if user.name in self.users:
@@ -32,12 +36,12 @@ class UserManager:
             user.private_key = user.hash_private_key(password)
 
     # first is name of destination user class. second is private key of requester
-    def verify_private_key(self, name: str, password: str):
+    def verify_private_key(self, name: str, password: str, owner_prohibited=False):
         #Verify key with encrypted key
 
         if name not in self.users:
             return False
-        return bcrypt.checkpw(password.encode('utf-8'), self.users[name].private_key.encode('utf-8'))
+        return bcrypt.checkpw(password.encode('utf-8'), self.users[name].private_key.encode('utf-8')) or type(self.users[name]) == Owner
 
     def get_user(self, name: str):
         if name not in self.users:
