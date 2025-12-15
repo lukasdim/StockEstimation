@@ -8,18 +8,21 @@ class User():
     def __init__(self, name: str, password: str, email: str = None):
         #Init user instance
         self.name = name
-        self.private_key = self._hash_private_key(password)
+        self.private_key = self.hash_private_key(password)
         self.email = email
+
+        self.balance = 10000 # fake starting balance of 10k
+        self.positions = []
     
-    def _hash_private_key(self, private_key: str):
-        if isinstance(private_key, str) and private_key.startswith('$2b$'):
-            return private_key
+    def hash_private_key(self, password: str):
+        if isinstance(password, str) and password.startswith('$2b$'):
+            return password
             
         # Hash the private key
         salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(private_key.encode('utf-8'), salt)
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
         return hashed.decode('utf-8')
-    
+
     def verify_private_key(self, private_key: str):
         try:
             return bcrypt.checkpw(private_key.encode('utf-8'), self.private_key.encode('utf-8'))
@@ -30,8 +33,8 @@ class User():
         #hashed_id verification
         if not isinstance(other, User):
             return False
-        return self.hashed_id == other.hashed_id
+        return (self.email+self.name) == other.private_key
     
     def __hash__(self):
         #Generate hash based on id
-        return hash(self.hashed_id)
+        return self.email+self.name

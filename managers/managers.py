@@ -32,7 +32,7 @@ class DataManager:
         df_temp = pd.DataFrame(data, index=data.index)
         df_temp["Ticker"] = ticker
         df_temp = df_temp.set_index("Ticker", append=True)
-        self.prediction = pd.concat([self.predictions, df_temp])
+        self.predictions = pd.concat([self.predictions, df_temp])
 
     def update_data(self):
         if len(self.tickers) == 0:
