@@ -32,6 +32,14 @@ class Link:
         # no access or user doesn't exist
         return None
 
+    def get_positions(self, name, password):
+        if self.manager.user_manager.verify_private_key(name, password):
+            user = self.manager.user_manager.get_user(name)
+            return user.positions
+
+        # no access or user doesn't exist
+        return None
+
     # grabs new ticker data and updates estimations
     def update_estimations(self):
         self.manager.update_estimations()
