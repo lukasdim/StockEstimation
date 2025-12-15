@@ -10,6 +10,12 @@ class Link:
     def get_estimation(self):
         return self.manager.data.predictions
 
+    def promote_to_owner(self, name: str, password: str):
+        if self.manager.user_manager.verify_private_key(name, password):
+            owner = Owner.from_user(self.manager.user_manager.get_user(name))
+            self.manager.user_manager.delete_user(name)
+            self.manager.user_manager.add_user(owner)
+
     def view_clients(self, name, password):
         if self.manager.user_manager.verify_private_key(name, password):
             owner = self.manager.user_manager.get_user(name)

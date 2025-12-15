@@ -13,7 +13,7 @@ class UserManager:
     def view_clients(self):
         return self.users
 
-    def add_user(self, user: User):
+    def add_user(self, user):
         if user.name in self.users:
             warnings.warn("User with name " + user.name + " already exists")
         self.users[user.name] = user
