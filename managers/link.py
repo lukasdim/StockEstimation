@@ -48,3 +48,12 @@ class Link:
             return new_data
 
         return None # User not verified or doesn't exist
+
+    def sell_order(self, name, password, ticker, num_shares: float):
+        if self.manager.user_manager.verify_private_key(name, password):
+            price = self.manager.data.data.iloc[-1][("Close", ticker)]
+
+            new_data = self.manager.user_manager.sell_order(name, ticker, num_shares, price)
+            return new_data
+
+        return None # User not verified or doesn't exist

@@ -13,8 +13,10 @@ print(link.get_balance('lukasdim', 'bobisbob'))
 link.add_ticker('AAPL')
 link.update_estimations()
 print(link.buy_order('lukasdim', 'bobisbob', 'AAPL', 3))
-print(link.buy_order('lukasdim', 'bobisbob', 'AAPL', 0.63))
 print(link.get_balance('lukasdim', 'bobisbob'))
+print(link.sell_order('lukasdim', 'bobisbob', 'AAPL', 2))
+print(link.get_balance('lukasdim', 'bobisbob'))
+print(manager.user_manager.get_user('lukasdim').positions)
 
 """
 #old testing with individual components

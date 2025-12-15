@@ -45,12 +45,14 @@ class UserManager:
             return None
         return self.users[name]
 
-    #
     def buy_order(self, name, ticker, num_shares: float, price: float):
         buy_date = datetime.now() # Reduces delay of computation time by being at top
+        if num_shares < 0:
+            warnings.warn("Number of shares cannot be negative")
+            return "Negative shares"
         if name not in self.users:
             warnings.warn("User with name " + name + "not found")
-            return None
+            return "User not found"
 
         user_obj = self.users[name]
         total = num_shares * price
@@ -77,3 +79,33 @@ class UserManager:
             return user_obj.positions[ticker]
 
         return "Total price is greater than your balance." # User doesn't have enough money.
+
+    def sell_order(self, name, ticker, num_shares: float, price: float):
+        if name not in self.users:
+            warnings.warn("User with name " + name + "not found")
+            return "User not found"
+
+        user_obj = self.users[name]
+
+        if num_shares > user_obj.positions[ticker]['buy_amount'] or num_shares < 0:
+            warnings.warn("Invalid share number")
+            return "Invalid share number"
+
+        revenue = num_shares * price
+        pnl = revenue - (num_shares * user_obj.positions[ticker]['stock_price']) # rev - old cost to purchase same #shares
+
+        remaining_shares = user_obj.positions[ticker]['buy_amount'] - num_shares
+
+        if remaining_shares > 0:
+            user_obj.positions[ticker] = {
+                'buy_date': user_obj.positions[ticker]['buy_date'],
+                'buy_amount': float(remaining_shares),
+                'stock_price': float(user_obj.positions[ticker]['stock_price']),
+                'total_price': float(user_obj.positions[ticker]['stock_price'] * remaining_shares),
+            }
+        else:
+            del user_obj.positions[ticker]
+
+        user_obj.balance += revenue
+
+        return {'sale_amount': float(revenue), 'pnl': float(pnl)} # return revenue and PnL (Profit and Loss)
