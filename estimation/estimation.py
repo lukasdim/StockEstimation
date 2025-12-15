@@ -22,12 +22,11 @@ Random Forest Regression (second best)
 """
 class ShortEstimation(Estimation):
     """
-    Autoregressive multi-step stock forecaster.
+    Autoregressive multi-step stock forecaster (real-world mode).
 
     - Uses past price changes in a sliding window to predict next-day change.
-    - Treats the LAST `horizon` days of the dataframe as the "future" period.
-    - Trains on all earlier data (no leakage).
-    - Rolls forward autoregressively to predict `horizon` future prices.
+    - Trains on ALL available historical samples (no train/test split).
+    - Forecasts `horizon` steps beyond the last date in the dataframe.
     """
 
     def __init__(self, horizon: int = 21, window_size: int = 10):
@@ -46,32 +45,32 @@ class ShortEstimation(Estimation):
         df["Change"] = df["Close"].diff()
         return df
 
-    # Build training data
+    # Build training data (ALL data)
     def build_training_data(self, df: pd.DataFrame):
         """
         Build X_train, y_train using a sliding window of past changes.
-        Also returns the last known close and last window of changes
-        before the forecast horizon, plus real future prices.
+
+        Returns:
+          X_train, y_train,
+          last_close (last close in df),
+          last_window (last `window_size` changes ending at last row),
+          forecast_index (future dates to label forecasts, if possible)
         """
         df = self.preprocess_data(df)
         closes = df["Close"].values
         changes = df["Change"].values
         N = len(df)
 
-        if N <= self.horizon + self.window_size + 1:
+        if N <= self.window_size + 1:
             raise ValueError(
-                f"Not enough data: need > {self.horizon + self.window_size + 1} rows, have {N}"
+                f"Not enough data: need > {self.window_size + 1} rows, have {N}"
             )
-
-        # Index where the forecast horizon begins.
-        # forecast from after closes[split_idx - 1].
-        split_idx = N - self.horizon
 
         X_list = []
         y_list = []
 
         # Build training samples: predict change[t] from previous `window_size` changes.
-        for t in range(self.window_size, split_idx):
+        for t in range(self.window_size, N):
             window = changes[t - self.window_size: t]  # shape (window_size,)
             target = changes[t]  # change at time t
 
@@ -88,19 +87,28 @@ class ShortEstimation(Estimation):
         X_train = np.array(X_list)  # (num_samples, window_size)
         y_train = np.array(y_list)  # (num_samples,)
 
-        # Last known close before horizon
-        last_close = closes[split_idx - 1]
+        # Last known close is the most recent close in df
+        last_close = float(closes[-1])
 
-        # Last window of changes before horizon
-        last_window = changes[split_idx - self.window_size: split_idx]
+        # Last window of changes ending at the last row
+        last_window = changes[-self.window_size:]
         if np.any(np.isnan(last_window)):
             raise ValueError("Not enough clean history to build last window of changes.")
 
-        # Real future prices for comparison (the last `horizon` closes)
-        real_future_prices = closes[split_idx: split_idx + self.horizon]
-        future_index = df.index[split_idx: split_idx + self.horizon]
+        # Try to create a future index. If index isn't datetime-like, fall back to a RangeIndex.
+        idx = df.index
+        if isinstance(idx, pd.DatetimeIndex) and len(idx) >= 2:
+            inferred = pd.infer_freq(idx)
+            if inferred is not None:
+                forecast_index = pd.date_range(start=idx[-1], periods=self.horizon + 1, freq=inferred)[1:]
+            else:
+                # fallback: use last step as delta
+                step = idx[-1] - idx[-2]
+                forecast_index = pd.DatetimeIndex([idx[-1] + step * (i + 1) for i in range(self.horizon)])
+        else:
+            forecast_index = pd.RangeIndex(start=0, stop=self.horizon, step=1)
 
-        return X_train, y_train, last_close, last_window, real_future_prices, future_index
+        return X_train, y_train, last_close, last_window, forecast_index
 
     # Train model
     def train(self, X_train: np.ndarray, y_train: np.ndarray):
@@ -126,9 +134,9 @@ class ShortEstimation(Estimation):
         """
         Roll forward autoregressively for `self.horizon` steps.
 
-        last_close: last known close price before horizon.
+        last_close: last known close price (most recent close in df).
         last_window: np.array of shape (window_size,) with the most recent
-                     `window_size` daily changes before the horizon.
+                     `window_size` daily changes ending at the last row.
         """
         if self.model is None:
             raise RuntimeError("Model is not trained. Call train() first.")
@@ -158,47 +166,30 @@ class ShortEstimation(Estimation):
 
     def estimate(self, df: pd.DataFrame):
         """
-        Full pipeline:
-          - Build training data (using all but last `horizon` days)
-          - Train model
-          - Autoregressively forecast `horizon` future prices
-          - Compare to real last `horizon` closes
+        Full pipeline (real-world mode):
+          - Train on ALL available data
+          - Forecast `horizon` future prices beyond the dataset
 
-        Returns a DataFrame with:
-          index: the dates of the last `horizon` rows
-          columns: predicted_price, predicted_change, real_price, error
+        Returns:
+          predicted_price_series, (None for real_price_series in real-world mode)
         """
-        (
-            X_train,
-            y_train,
-            last_close,
-            last_window,
-            real_future_prices,
-            future_index,
-        ) = self.build_training_data(df)
+        X_train, y_train, last_close, last_window, forecast_index = self.build_training_data(df)
 
         self.train(X_train, y_train)
 
         pred_prices, pred_changes = self.forecast(last_close, last_window)
 
-        # Align lengths (they should all be horizon)
-        assert len(pred_prices) == len(real_future_prices) == self.horizon
-
-        mse = mean_squared_error(real_future_prices, pred_prices)
-        print(f"MSE over last {self.horizon} days: {mse:.6f}")
-
-        # Build output DataFrame
         out = pd.DataFrame(
             {
                 "predicted_price": pred_prices,
                 "predicted_change": pred_changes,
-                "real_price": real_future_prices,
             },
-            index=future_index,
+            index=forecast_index,
         )
-        out["error"] = out["predicted_price"] - out["real_price"]
 
-        return out["predicted_price"], out["real_price"]
+        # No "real_data" / no holdout comparison in real-world mode
+        return out["predicted_price"], None
+
 
 """ 
 LINEAR REGRESSION (less accurate short-term, more accurate long term) 
@@ -267,10 +258,11 @@ class LongEstimation(Estimation):
         forecast = model.predict(future)
 
         # 5. Extract what matters
-        predictions = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]]
+        predictions = forecast[["ds", "yhat", "yhat_lower", "yhat_upper"]].copy()
+        predictions.index.name = "Date"
 
         # 6. Merge predictions back with original data
-        merged = df.merge(predictions, on="ds", how="right")
-        merged.set_index("ds", inplace=True)
+        # merged = df.merge(predictions, on="ds", how="right")
+        predictions.set_index("ds", inplace=True)
 
-        return merged
+        return predictions

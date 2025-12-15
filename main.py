@@ -1,8 +1,21 @@
 from matplotlib import pyplot as plt
 
-from managers.managers import DataManager
+from managers.managers import Manager
+from managers.link import Link
 from estimation.estimation import ShortEstimation, LongEstimation
 import pandas
+
+# new testing with only link class
+manager = Manager()
+link = Link(manager)
+link.add_user(name='lukasdim', password='bobisbob', email='bobbob@bob.bob')
+print(link.get_balance('lukasdim'))
+link.add_ticker('AAPL')
+link.update_estimations()
+print(link.get_estimation())
+
+"""
+#old testing with individual components
 
 manager = DataManager()
 
@@ -43,3 +56,4 @@ plt.xlabel('Date')
 plt.ylabel('Close')
 plt.grid()
 plt.show()
+"""

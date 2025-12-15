@@ -29,13 +29,14 @@ class UserManager:
             user.email = email
         if password is not None:
             user.private_key = user.hash_private_key(password)
-    
-    def verify_private_key(self, name: str, private_key: str):
+
+    # first is name of destination user class. second is private key of requester
+    def verify_private_key(self, name_destination: str, private_key: str):
         #Verify key with encrypted key
 
-        if name not in self.users:
+        if name_destination not in self.users:
             return False
-        return bcrypt.checkpw(private_key.encode('utf-8'), self.users[name].private_key.encode('utf-8'))
+        return bcrypt.checkpw(private_key.encode('utf-8'), self.users[name_destination].private_key.encode('utf-8'))
 
     def get_user(self, name: str):
         if name not in self.users:
