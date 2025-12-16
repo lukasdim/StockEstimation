@@ -5,6 +5,7 @@ import '../api_service.dart';
 class LoginPage extends StatefulWidget {
   final VoidCallback toggleTheme;
   final ApiService apiService;
+  
 
   const LoginPage({
     Key? key,
@@ -17,68 +18,56 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   bool isRegistering = false;
   bool isLoading = false;
 
   Future<void> handleAuth() async {
-  final name = nameController.text.trim();
-  final email = emailController.text.trim();
-  final password = passwordController.text.trim();
+    final name = nameController.text.trim();
+    final password = passwordController.text.trim();
+    
+    print("=== Starting Auth ===");
+    print("Name: $name");
+    print("Password length: ${password.length}");
+    print("Is registering: $isRegistering");
 
-  print("=== Starting Auth ===");
-  print("Name: $name");
-  print("Email: $email");
-  print("Password length: ${password.length}");
-  print("Is registering: $isRegistering");
+    if (name.isEmpty) {
+      _showError("Please enter a username");
+      return;
+    }
 
-  if (name.isEmpty) {
-    _showError("Please enter a username");
-    return;
-  }
+    if (password.length < 8) {
+      _showError("Password must be at least 8 characters");
+      return;
+    }
 
-  if (password.length < 8) {
-    _showError("Password must be at least 8 characters");
-    return;
-  }
+    setState(() => isLoading = true);
 
-  if (email.isNotEmpty && !isValidEmail(email)) {
-    _showError("Invalid email format");
-    return;
-  }
-
-  setState(() => isLoading = true);
-
-  try {
-    if (isRegistering) {
-      print("Calling addUser API...");
-      await widget.apiService.addUser(
-        name,
-        password,
-        email: email.isEmpty ? null : email,
-      );
-      print("User added successfully!");
-      _showSuccess("Account created!");
-      navigateToMain(true, name);
-    } else {
-      print("Calling getBalance API...");
-      final balance = await widget.apiService.getBalance(name);
-      print("Balance received: $balance");
-      if (balance != null) {
+    try {
+      if (isRegistering) {
+        print("Calling addUser API...");
+        await widget.apiService.addUser(name, password);
+        print("User added successfully!");
+        _showSuccess("Account created!");
         navigateToMain(true, name);
       } else {
-        _showError("User not found");
+        print("Calling getBalance API...");
+        final balance = await widget.apiService.getBalance(name, password);
+        print("Balance received: $balance");
+        if (balance != null) {
+          navigateToMain(true, name);
+        } else {
+          _showError("User not found");
+        }
       }
+    } catch (e) {
+      print("ERROR: $e");
+      _showError(isRegistering ? "Registration failed: $e" : "Login failed: $e");
+    } finally {
+      setState(() => isLoading = false);
     }
-  } catch (e) {
-    print("ERROR: $e");  // ← This will show the actual error
-    _showError(isRegistering ? "Registration failed: $e" : "Login failed: $e");
-  } finally {
-    setState(() => isLoading = false);
   }
-}
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -101,6 +90,7 @@ class _LoginPageState extends State<LoginPage> {
           isLoggedIn: loggedIn,
           apiService: widget.apiService,
           userName: userName,
+          userPassword: passwordController.text,
         ),
       ),
     );
@@ -120,15 +110,9 @@ class _LoginPageState extends State<LoginPage> {
               decoration: InputDecoration(labelText: "Username"),
             ),
             SizedBox(height: 10),
-            if (isRegistering)
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(labelText: "Email (optional)"),
-              ),
-            if (isRegistering) SizedBox(height: 10),
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: "Password"),
+              decoration: InputDecoration(labelText: "Password (min 8 characters)"),
               obscureText: true,
             ),
             SizedBox(height: 20),
@@ -157,35 +141,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-bool isValidEmail(String email) {
-  email = email.toLowerCase();
-  if (email.isEmpty) return false;
-  
-  if (!email.contains("@")) return false;
-  final parts = email.split("@");
-  if (parts.length != 2) return false;
-
-  final name = parts[0];
-  final domain = parts[1]; 
-
-  if (name.isEmpty) return false;
-  if (domain.isEmpty) return false;
-
-  if (!domain.contains(".")) return false;
-  final domainParts = domain.split(".");
-  if (domainParts.length < 2) return false;
-  final domainName = domainParts[0];
-  final ending = domainParts.last;
-  
-  if (domainName.isEmpty) return false;
-  
-  final allowedendings = ["com", "edu", "org", "net", "gov", "io", "co", "us", "uk"]; 
-  if (!allowedendings.contains(ending)) return false;
-  
-  return true;
-}
-
 bool isValidPassword(String password) {
   if (password.length < 8) return false;
   return true;
-}
+} 

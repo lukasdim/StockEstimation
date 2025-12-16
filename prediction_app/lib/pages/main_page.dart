@@ -9,12 +9,14 @@ class MainPage extends StatefulWidget {
   final bool isLoggedIn;
   final ApiService apiService;
   final String? userName;
+  final String? userPassword;
 
   MainPage({
     required this.toggleTheme,
     required this.isLoggedIn,
     required this.apiService,
     this.userName,
+    this.userPassword,
   });
   
   @override
@@ -168,6 +170,8 @@ class _MainPageState extends State<MainPage> {
                     toggleTheme: widget.toggleTheme,
                     isLoggedIn: widget.isLoggedIn,
                     apiService: widget.apiService,
+                    userName: widget.userName, 
+                    userPassword: widget.userPassword,
                   ),
                 ),
               );

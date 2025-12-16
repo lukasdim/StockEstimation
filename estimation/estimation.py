@@ -188,7 +188,7 @@ class ShortEstimation(Estimation):
         )
 
         # No "real_data" / no holdout comparison in real-world mode
-        return out["predicted_price"], None
+        return out, None
 
 
 """ 

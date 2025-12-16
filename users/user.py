@@ -33,8 +33,8 @@ class User():
         #hashed_id verification
         if not isinstance(other, User):
             return False
-        return (self.email+self.name) == (other.email + other.name)
+        return (self.email+self.name) == other.private_key
     
     def __hash__(self):
         #Generate hash based on id
-        return hash((self.email, self.name))
+        return self.email+self.name
